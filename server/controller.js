@@ -1,14 +1,12 @@
-const dotenv = require("dotenv").config();
-// dotenv.config();
+require("dotenv").config();
 const { CONNECTION_STRING } = process.env;
 const Sequelize = require("sequelize");
 const sequelize = new Sequelize(CONNECTION_STRING, {
-  dialect: 'postgres',
+  dialect: "postgres",
   dialectOptions: {
     ssl: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
     },
-
   },
 });
 
@@ -24,12 +22,12 @@ module.exports = {
                 country_id serial primary key, 
                 name varchar
             );
-
+            select * from countries;
             CREATE TABLE cities (
                 city_id SERIAL PRIMARY KEY,
                 name VARCHAR,
                 rating INTEGER,
-                country_id INTEGER REFERENCES countries(country_id)
+                country_id integer REFERENCES countries(country_id)
 
             );
 
@@ -239,37 +237,36 @@ module.exports = {
   },
   getCountries: (req, res) => {
     sequelize
-      .query("SELECT * FROM countries", {
-        type: Sequelize.QueryTypes.SELECT,
-      })
+      .query("SELECT * FROM countries")
       .then((dbRes) => {
         res.status(200).send(dbRes[0]);
       })
       .catch((error) => {
         console.error("Error fetching countries:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).send({ error: "Internal Server Error" });
       });
   },
-  createCity:  (req, res) => {
+  createCity: (req, res) => {
     // Destructure values from req.body
-    const { name, rating, countryId } = req.body;
-  
+    console.log(req.body);
+    const { name, rating, country_id } = req.body;
+
     // Define the SQL query using a template string
-    const insertQuery = `
-      INSERT INTO cities (name, rating, countryId)
-      VALUES ('${name}', ${rating}, ${countryId})
-      RETURNING *;`;
-  
+
     sequelize
-      .query(insertQuery, { type: Sequelize.QueryTypes.INSERT })
+      .query(
+        `
+      INSERT INTO cities (name, rating, country_id)
+      VALUES ('${name}', '${rating}', '${country_id}');`
+      )
       .then((dbRes) => {
         // Send the inserted data as a response
         res.status(200).send(dbRes[0]);
       })
       .catch((error) => {
         // Handle any errors, for example, send an error response
-        console.error('Error creating city:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error("Error creating city:", error);
+        res.status(500).send({ error: "Internal Server Error" });
       });
   },
   getCities: (req, res) => {
@@ -286,29 +283,29 @@ module.exports = {
         countries
       ON
         cities.country_id = countries.country_id;`;
-  
+
     sequelize
-      .query(selectQuery, { type: Sequelize.QueryTypes.SELECT })
+      .query(selectQuery)
       .then((dbRes) => {
         // Send the query result as a response
         res.status(200).send(dbRes[0]);
       })
       .catch((error) => {
         // Handle any errors, for example, send an error response
-        console.error('Error fetching cities:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error("Error fetching cities:", error);
+        res.status(500).json({ error: "Internal Server Error" });
       });
   },
   deleteCity: (req, res) => {
     // Destructure the city_id from req.params
     const { city_id } = req.params;
-  
+
     // Define the SQL query using a template string
     const deleteQuery = `
       DELETE FROM cities
       WHERE city_id = ${city_id}
       RETURNING *;`;
-  
+
     sequelize
       .query(deleteQuery, { type: Sequelize.QueryTypes.DELETE })
       .then((dbRes) => {
@@ -317,8 +314,8 @@ module.exports = {
       })
       .catch((error) => {
         // Handle any errors, for example, send an error response
-        console.error('Error deleting city:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error("Error deleting city:", error);
+        res.status(500).json({ error: "Internal Server Error" });
       });
   },
 };
